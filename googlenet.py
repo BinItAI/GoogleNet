@@ -16,10 +16,14 @@ if keras.backend.backend() == 'tensorflow':
     import tensorflow as tf
     from keras.utils.conv_utils import convert_kernel
 
+SHAPE = (3,224,224)
+CATEGORIES = 23
+
 
 def create_googlenet(weights_path=None):
+    
     # creates GoogLeNet a.k.a. Inception v1 (Szegedy, 2015)
-    input = Input(shape=(3, 224, 224))
+    input = Input(shape=SHAPE)
 
     input_pad = ZeroPadding2D(padding=(3, 3))(input)
     conv1_7x7_s2 = Conv2D(64, (7,7), strides=(2,2), padding='valid', activation='relu', name='conv1/7x7_s2', kernel_regularizer=l2(0.0002))(input_pad)
@@ -71,15 +75,15 @@ def create_googlenet(weights_path=None):
     inception_4a_pool = MaxPooling2D(pool_size=(3,3), strides=(1,1), padding='same', name='inception_4a/pool')(pool3_3x3_s2)
     inception_4a_pool_proj = Conv2D(64, (1,1), padding='same', activation='relu', name='inception_4a/pool_proj', kernel_regularizer=l2(0.0002))(inception_4a_pool)
     inception_4a_output = Concatenate(axis=1, name='inception_4a/output')([inception_4a_1x1,inception_4a_3x3,inception_4a_5x5,inception_4a_pool_proj])
-
+'''
     loss1_ave_pool = AveragePooling2D(pool_size=(5,5), strides=(3,3), name='loss1/ave_pool')(inception_4a_output)
     loss1_conv = Conv2D(128, (1,1), padding='same', activation='relu', name='loss1/conv', kernel_regularizer=l2(0.0002))(loss1_ave_pool)
     loss1_flat = Flatten()(loss1_conv)
     loss1_fc = Dense(1024, activation='relu', name='loss1/fc', kernel_regularizer=l2(0.0002))(loss1_flat)
     loss1_drop_fc = Dropout(rate=0.7)(loss1_fc)
-    loss1_classifier = Dense(1000, name='loss1/classifier', kernel_regularizer=l2(0.0002))(loss1_drop_fc)
+    loss1_classifier = Dense(CATEGORIES, name='loss1/classifier', kernel_regularizer=l2(0.0002))(loss1_drop_fc)
     loss1_classifier_act = Activation('softmax')(loss1_classifier)
-
+'''
     inception_4b_1x1 = Conv2D(160, (1,1), padding='same', activation='relu', name='inception_4b/1x1', kernel_regularizer=l2(0.0002))(inception_4a_output)
     inception_4b_3x3_reduce = Conv2D(112, (1,1), padding='same', activation='relu', name='inception_4b/3x3_reduce', kernel_regularizer=l2(0.0002))(inception_4a_output)
     inception_4b_3x3_pad = ZeroPadding2D(padding=(1, 1))(inception_4b_3x3_reduce)
@@ -112,15 +116,15 @@ def create_googlenet(weights_path=None):
     inception_4d_pool = MaxPooling2D(pool_size=(3,3), strides=(1,1), padding='same', name='inception_4d/pool')(inception_4c_output)
     inception_4d_pool_proj = Conv2D(64, (1,1), padding='same', activation='relu', name='inception_4d/pool_proj', kernel_regularizer=l2(0.0002))(inception_4d_pool)
     inception_4d_output = Concatenate(axis=1, name='inception_4d/output')([inception_4d_1x1,inception_4d_3x3,inception_4d_5x5,inception_4d_pool_proj])
-
+'''
     loss2_ave_pool = AveragePooling2D(pool_size=(5,5), strides=(3,3), name='loss2/ave_pool')(inception_4d_output)
     loss2_conv = Conv2D(128, (1,1), padding='same', activation='relu', name='loss2/conv', kernel_regularizer=l2(0.0002))(loss2_ave_pool)
     loss2_flat = Flatten()(loss2_conv)
     loss2_fc = Dense(1024, activation='relu', name='loss2/fc', kernel_regularizer=l2(0.0002))(loss2_flat)
     loss2_drop_fc = Dropout(rate=0.7)(loss2_fc)
-    loss2_classifier = Dense(1000, name='loss2/classifier', kernel_regularizer=l2(0.0002))(loss2_drop_fc)
+    loss2_classifier = Dense(CATEGORIES, name='loss2/classifier', kernel_regularizer=l2(0.0002))(loss2_drop_fc)
     loss2_classifier_act = Activation('softmax')(loss2_classifier)
-
+'''
     inception_4e_1x1 = Conv2D(256, (1,1), padding='same', activation='relu', name='inception_4e/1x1', kernel_regularizer=l2(0.0002))(inception_4d_output)
     inception_4e_3x3_reduce = Conv2D(160, (1,1), padding='same', activation='relu', name='inception_4e/3x3_reduce', kernel_regularizer=l2(0.0002))(inception_4d_output)
     inception_4e_3x3_pad = ZeroPadding2D(padding=(1, 1))(inception_4e_3x3_reduce)
@@ -159,12 +163,14 @@ def create_googlenet(weights_path=None):
     inception_5b_output = Concatenate(axis=1, name='inception_5b/output')([inception_5b_1x1,inception_5b_3x3,inception_5b_5x5,inception_5b_pool_proj])
 
     pool5_7x7_s1 = AveragePooling2D(pool_size=(7,7), strides=(1,1), name='pool5/7x7_s2')(inception_5b_output)
-    loss3_flat = Flatten()(pool5_7x7_s1)
-    pool5_drop_7x7_s1 = Dropout(rate=0.4)(loss3_flat)
-    loss3_classifier = Dense(1000, name='loss3/classifier', kernel_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
-    loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
+    #loss3_flat = Flatten()(pool5_7x7_s1)
+    pool5_drop_7x7_s1 = Dropout(rate=0.4)(pool5_7x7_s1)
+    #loss3_classifier = Dense(CATEGORIES, name='loss3/classifier', kernel_regularizer=l2(0.0002))(pool5_drop_7x7_s1)
+    #loss3_classifier_act = Activation('softmax', name='prob')(loss3_classifier)
+    final_layer = Dense(CATEGORIES, name='final_layer', activation='softmax')(pool5_drop_7x7_s1)
+    
 
-    googlenet = Model(inputs=input, outputs=[loss1_classifier_act,loss2_classifier_act,loss3_classifier_act])
+    googlenet = Model(inputs=input, outputs=[final_layer])
 
     if weights_path:
         googlenet.load_weights(weights_path)
@@ -180,7 +186,6 @@ def create_googlenet(weights_path=None):
         K.get_session().run(ops)
 
     return googlenet
-
 
 if __name__ == "__main__":
     img = imageio.imread('cat.jpg', pilmode='RGB')
@@ -198,6 +203,6 @@ if __name__ == "__main__":
     model.compile(optimizer=sgd, loss='categorical_crossentropy')
     out = model.predict(img) # note: the model has three outputs
     labels = np.loadtxt('synset_words.txt', str, delimiter='\t')
-    predicted_label = np.argmax(out[2])
+    predicted_label = np.argmax(out[0])
     predicted_class_name = labels[predicted_label]
     print('Predicted Class: ', predicted_label, ', Class Name: ', predicted_class_name)
