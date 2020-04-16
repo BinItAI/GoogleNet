@@ -1,6 +1,6 @@
 ## GoogLeNet in Keras
 
-Here is a [Keras](http://keras.io/) model of GoogLeNet (a.k.a Inception V1). I created it by converting the GoogLeNet model from Caffe.
+[Keras](http://keras.io/) model of GoogLeNet (a.k.a Inception V1).
 
 GoogLeNet paper:
 
